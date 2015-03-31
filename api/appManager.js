@@ -3,10 +3,7 @@ var appm = (function () {
     var module = function (db,router) {
 
         var user = new userModule(db);
-
         var authRole = configs.appM.apiAuthRole;
-
-
         try{
             var basicAuthAdminCredentials = base64Decode(request.getHeader("Authorization").replace("Basic ", "")).split(":");
         }catch(e){
@@ -18,16 +15,21 @@ var appm = (function () {
         }
 
         var authUser = user.authenticate({'username': basicAuthAdminCredentials[0], 'password': basicAuthAdminCredentials[1]});
-
         if(authUser == null || !(authUser.tenantId === -1234 && authUser.roles.indexOf(authRole) > 0)){
             return;
         }
 
-
+        var store = new storeModule(db);
+        var driver = require('driver').driver(db);
+        var sqlscripts = require('/sqlscripts/db.js');
 
         router.get('appm/devices/list/tenant/{+tenantId}/user/{+userId}', function(ctx){
-            print(ctx);
+            var devices = driver.query(sqlscripts.devices.select26, String(ctx.userId), ctx.tenantId);
+            print(devices);
         });
+
+
+
     };
     // prototype
     module.prototype = {
