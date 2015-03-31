@@ -517,6 +517,7 @@ var store = (function() {
         },
         installApp: function(payload) {
             payload = {devices: payload, operation: "INSTALLAPP"}
+            log.info("PAYLOAD >>>>>>>>>>>>> " + stringify(payload));
             device.sendToDevices(payload);
         },
         getAllAppFromDevice: function(ctx) {

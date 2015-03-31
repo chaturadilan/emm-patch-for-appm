@@ -29,6 +29,26 @@ var appm = (function () {
         });
 
 
+        router.post('appm/operations/tenant/{+tenantId}', function(ctx){
+
+            var deviceModule = require('device.js').device;
+            var device = new deviceModule(db);
+            var payload = getPayloadByType(ctx);
+
+            if(ctx.to === "device"){
+               // log.info("Payload >>>>>>>>>>>>>>>>>>>>>" + stringify(payload));
+                device.sendToDevices(payload);
+
+            }else if(ctx.to === "user"){
+
+                log.info("user >>>>>>>>>>");
+
+            }else if(ctx.to === "role"){
+
+                log.info("Role >>>>>>>>>>");
+            }
+
+        });
 
     };
     // prototype
@@ -38,6 +58,19 @@ var appm = (function () {
     // return module
 
 
+    function getPayloadByType(ctx){
+        switch(ctx.app.type){
+            case "webapp":
+                var payload = {"devices" : [{"deviceid" : ctx.resources[0], "identity" : ctx.app.location, "platform_id" : ctx.app.platform, "type" : "Web App", "title" : ctx.app.name}], "operation" : "WEBCLIP"};
+                return payload;
+            case 'public':
+                var payload = {"devices" : [{"deviceid" : ctx.resources[0], "identity" : ctx.app.packageName, "platform_id" : ctx.app.platform, "type" : "Market"}], "operation" : "INSTALLAPP"};
+                return payload;
+            default:
+                var payload = {"devices" : [{"deviceid" : ctx.resources[0], "identity" : ctx.app.location, "platform_id" : ctx.app.platform, "type" : "Enterprise"}], "operation" : "INSTALLAPP"};
+                return payload;
+        }
+    }
 
     function base64Decode(s) {
         var e={},i,b=0,c,x,l=0,a,r='',w=String.fromCharCode,L=s.length;

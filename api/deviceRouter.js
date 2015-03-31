@@ -292,6 +292,7 @@ var device = (function () {
         router.post('devices/{deviceid}/WEBCLIP', function(ctx){
             if(common.checkAuth(ctx)){
                 ctx.operation = "WEBCLIP";
+                log.info(ctx);
                 var result = device.sendToDevice(ctx);
             }
         });
