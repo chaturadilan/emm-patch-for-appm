@@ -33,19 +33,45 @@ var appm = (function () {
 
             var deviceModule = require('device.js').device;
             var device = new deviceModule(db);
-            var payload = getPayloadByType(ctx);
+
+
+           // log.info("CTX >>>>>>>>>>>>>>>>>>>>>" + stringify(ctx));
 
             if(ctx.to === "device"){
-               // log.info("Payload >>>>>>>>>>>>>>>>>>>>>" + stringify(payload));
+                var payload = getPayloadByType(ctx.resources[0], ctx);
+                //log.info("Payload >>>>>>>>>>>>>>>>>>>>>" + stringify(payload));
                 device.sendToDevices(payload);
 
             }else if(ctx.to === "user"){
 
-                log.info("user >>>>>>>>>>");
+               // log.info("user >>>>>>>>>>");
+
+                ctx.resources.forEach(function(username){
+                    var devices = driver.query(sqlscripts.devices.select26, String(username), ctx.tenantId);
+                    devices.forEach(function(deviceOfUser){
+                        var payload = getPayloadByType(deviceOfUser.id, ctx);
+                        device.sendToDevices(payload);
+                    });
+                });
+
 
             }else if(ctx.to === "role"){
+                var carbon = require('carbon');
+                var server = require('store').server
+                var um = new carbon.user.UserManager(server, ctx.tenantId);
 
-                log.info("Role >>>>>>>>>>");
+                ctx.resources.forEach(function(role){
+                    var users = parse(stringify(um.getUserListOfRole(role)));
+                    users.forEach(function(username){
+                        var devices = driver.query(sqlscripts.devices.select26, String(username), ctx.tenantId);
+                        devices.forEach(function(deviceOfUser){
+                            var payload = getPayloadByType(deviceOfUser.id, ctx);
+                            device.sendToDevices(payload);
+                        });
+                    });
+                });
+
+               // log.info("Role >>>>>>>>>>");
             }
 
         });
@@ -58,18 +84,28 @@ var appm = (function () {
     // return module
 
 
-    function getPayloadByType(ctx){
+    function getPayloadByType(deviceId, ctx){
         switch(ctx.app.type){
             case "webapp":
-                var payload = {"devices" : [{"deviceid" : ctx.resources[0], "identity" : ctx.app.location, "platform_id" : ctx.app.platform, "type" : "Web App", "title" : ctx.app.name}], "operation" : "WEBCLIP"};
-                return payload;
+                var payload = {"devices" : [{"deviceid" : deviceId, "identity" : ctx.app.location, "platform_id" : ctx.app.platform, "type" : "Web App", "title" : ctx.app.name}], "operation" : "WEBCLIP"};
+                break;
             case 'public':
-                var payload = {"devices" : [{"deviceid" : ctx.resources[0], "identity" : ctx.app.packageName, "platform_id" : ctx.app.platform, "type" : "Market"}], "operation" : "INSTALLAPP"};
-                return payload;
+                if(ctx.action === "install"){
+                    var payload = {"devices" : [{"deviceid" : deviceId, "identity" : ctx.app.packageName, "platform_id" : ctx.app.platform, "type" : "Market"}], "operation" : "INSTALLAPP"};
+                 }else{
+                    var payload = {"devices" : [{"deviceid" : deviceId, "identity" : ctx.app.packageName, "platform_id" : ctx.app.platform, "type" : "Market"}], "operation" : "UNINSTALLAPP"};
+                 }
+                break;
             default:
-                var payload = {"devices" : [{"deviceid" : ctx.resources[0], "identity" : ctx.app.location, "platform_id" : ctx.app.platform, "type" : "Enterprise"}], "operation" : "INSTALLAPP"};
-                return payload;
+                if(ctx.action === "install"){
+                    var payload = {"devices" : [{"deviceid" : deviceId, "identity" : ctx.app.location, "platform_id" : ctx.app.platform, "type" : "Enterprise"}], "operation" : "INSTALLAPP"};
+                 }else{
+                    var payload = {"devices" : [{"deviceid" : deviceId, "identity" : ctx.app.location, "platform_id" : ctx.app.platform, "type" : "Enterprise"}], "operation" : "UNINSTALLAPP"};
+                }
         }
+
+        log.info("Payload : " + stringify(payload));
+        return payload;
     }
 
     function base64Decode(s) {
