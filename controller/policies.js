@@ -14,6 +14,9 @@ var user = new userModule(db);
 var storeModule = require('/modules/store.js').store;
 var store = new storeModule(db);
 
+var appMModule = require('/modules/appm.js').appmgr;
+var appm = new appMModule(db);
+
 
 
 configuration = function(appController){	
@@ -192,15 +195,14 @@ add = function(appController){
 	}catch(e){
 		var features = [];
 	}
-    
-    
+
     try{
-		var installedApps =  store.getAppsFromStoreFormatted();
+		var installedApps =  appm.getApps(context.currentUser.tenantId);
         
 	}catch(e){
 		var installedApps = [];
 	}
-    
+
 		
 	context.jsFile= "policies/add.js";
 	context.title = context.title + " | Configuration";	
@@ -225,7 +227,7 @@ edit = function(appController){
     
     
     try{
-		var installedApps =  store.getAppsFromStoreFormatted();
+		var installedApps =  appm.getApps(context.currentUser.tenantId);
 	}catch(e){
 		var installedApps = [];
 	}
